@@ -1,37 +1,20 @@
-// Pessoa types
-export interface Pessoa {
+// BasePessoa types
+export interface BasePessoa {
   id: number
   nome: string
   cpf: string // Format: XXX.XXX.XXX-XX
   email: string
-  endereco: Endereco
-  foto?: Foto
 }
 
-// Usuario types
-export interface Usuario {
-  id: number
+// BaseUsuario types
+export interface BaseUsuario extends BasePessoa {
   username: string
-  nome: string
-  email: string
-  cpf: string // Format: XXX.XXX.XXX-XX
   dataNascimento: string // Format: yyyy-MM-dd
   telefone: string // Format: (DD) [X]XXXX-XXXX
-  password?: string // Min length: 8
 }
 
-// Contato types
-export interface Contato extends Pessoa {
-  telefone: string // Format: (DD) [X]XXXX-XXXX
-  tag: string
-  tipoContato: 'CELULAR' | 'EMAIL' | 'TELEFONE'
-  privado: boolean
-  usuario: Usuario
-  favorite?: boolean
-}
-
-// Endereco types
-export interface Endereco {
+// BaseEndereco types
+export interface BaseEndereco {
   id?: number
   logradouro: string
   numero: number
@@ -47,6 +30,27 @@ export interface Foto {
   id: string
   name: string
   type: string
+}
+
+// Pessoa types
+export interface Pessoa extends BasePessoa {
+  endereco: BaseEndereco
+  foto?: Foto
+}
+
+// Usuario types
+export interface Usuario extends BaseUsuario {
+  password?: string // Min length: 8
+}
+
+// Contato types
+export interface Contato extends BasePessoa {
+  telefone: string // Format: (DD) [X]XXXX-XXXX
+  tag: string
+  tipoContato: 'CELULAR' | 'EMAIL' | 'TELEFONE'
+  privado: boolean
+  usuario: Usuario
+  favorite?: boolean
 }
 
 // LoginRequest types
@@ -104,41 +108,17 @@ export interface ContatoFormData {
 }
 
 // PessoaFormData types
-export interface PessoaFormData {
-  nome: string
-  cpf: string
-  email: string
-  endereco: {
-    logradouro: string
-    numero: number
-    bairro: string
-    cidade: string
-    estado: string
-    cep: string
-    pais: string
-  }
+export interface PessoaFormData extends BasePessoa {
+  endereco: BaseEndereco
 }
 
 // UsuarioFormData types
-export interface UsuarioFormData {
-  id?: number
-  username: string
-  nome: string
-  email: string
-  cpf: string
-  dataNascimento: string
-  telefone: string
+export interface UsuarioFormData extends BaseUsuario {
   password?: string
 }
 
 // CreateUsuarioFormData types
-export interface CreateUsuarioFormData {
-  username: string
-  nome: string
-  email: string
-  cpf: string
-  dataNascimento: string
-  telefone: string
+export interface CreateUsuarioFormData extends BaseUsuario {
   password: string
 }
 
