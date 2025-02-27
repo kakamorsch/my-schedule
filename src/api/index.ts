@@ -13,311 +13,122 @@ import type {
 } from '@/types/auth'
 
 const api = {
-  // Auth endpoints
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
+  // Helper function to handle API requests
+  async request<T>(method: string, url: string, token?: string, data?: unknown): Promise<T> {
+    const headers = new Headers()
+    headers.append('Content-Type', 'application/json')
+    if (token) {
+      headers.append('Authorization', `Bearer ${token}`)
+    }
+
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
     })
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.message || 'Login failed')
+      throw new Error(errorData.message || 'Request failed')
     }
 
     return await response.json()
+  },
+
+  // Helper function to handle API requests with blob response
+  async requestBlob(url: string, token?: string): Promise<Blob> {
+    const headers = new Headers()
+    if (token) {
+      headers.append('Authorization', `Bearer ${token}`)
+    }
+
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      headers,
+    })
+
+    if (!response.ok) {
+      throw new Error('Request failed')
+    }
+
+    return await response.blob()
+  },
+
+  // Auth endpoints
+  async login(credentials: LoginRequest): Promise<AuthResponse> {
+    return await this.request('POST', '/auth/login', undefined, credentials)
   },
 
   // Usuario endpoints
   async alterarSenha(token: string, comando: ComandoAlterarSenha): Promise<ApiResponse<boolean>> {
-    const response = await fetch(`${API_BASE_URL}/usuario/alterarSenha`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(comando),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to change password')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/usuario/alterarSenha', token, comando)
   },
 
   async atualizarUsuario(token: string, usuario: Partial<Usuario>): Promise<ApiResponse<Usuario>> {
-    const response = await fetch(`${API_BASE_URL}/usuario/atualizar`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(usuario),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to update user')
-    }
-
-    return await response.json()
+    return await this.request('PUT', '/usuario/atualizar', token, usuario)
   },
 
   async buscarUsuario(token: string, id: number): Promise<ApiResponse<Usuario>> {
-    const response = await fetch(`${API_BASE_URL}/usuario/buscar/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to get user')
-    }
-
-    return await response.json()
+    return await this.request('GET', `/usuario/buscar/${id}`, token)
   },
 
   async pesquisarUsuarios(token: string, termo: string): Promise<ApiResponse<Usuario[]>> {
-    const response = await fetch(`${API_BASE_URL}/usuario/pesquisar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ termo }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to search users')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/usuario/pesquisar', token, { termo })
   },
 
   async salvarUsuario(token: string, usuario: Usuario): Promise<ApiResponse<Usuario>> {
-    const response = await fetch(`${API_BASE_URL}/usuario/salvar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(usuario),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to save user')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/usuario/salvar', token, usuario)
   },
 
   // Contato endpoints
   async listContactsByPerson(token: string, pessoaId: number): Promise<ApiResponse<Contato[]>> {
-    const response = await fetch(`${API_BASE_URL}/contato/listar/${pessoaId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to list contacts')
-    }
-
-    return await response.json()
+    return await this.request('GET', `/contato/listar/${pessoaId}`, token)
   },
 
   async searchContacts(token: string, termo: string): Promise<ApiResponse<Contato[]>> {
-    const response = await fetch(`${API_BASE_URL}/contato/pesquisar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ termo }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to search contacts')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/contato/pesquisar', token, { termo })
   },
 
   async deleteContact(token: string, id: number): Promise<ApiResponse<boolean>> {
-    const response = await fetch(`${API_BASE_URL}/contato/remover/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to delete contact')
-    }
-
-    return await response.json()
+    return await this.request('DELETE', `/contato/remover/${id}`, token)
   },
 
   async saveContact(token: string, contactData: ContatoFormData): Promise<ApiResponse<Contato>> {
-    const response = await fetch(`${API_BASE_URL}/contato/salvar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(contactData),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to save contact')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/contato/salvar', token, contactData)
   },
 
   // Favoritos endpoints
   async searchFavorites(token: string): Promise<ApiResponse<Contato[]>> {
-    const response = await fetch(`${API_BASE_URL}/favorito/pesquisar`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to search favorites')
-    }
-
-    return await response.json()
+    return await this.request('GET', '/favorito/pesquisar', token)
   },
 
   async removeFavorite(token: string, contatoId: number): Promise<ApiResponse<boolean>> {
-    const response = await fetch(`${API_BASE_URL}/favorito/remover/${contatoId}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to remove favorite')
-    }
-
-    return await response.json()
+    return await this.request('DELETE', `/favorito/remover/${contatoId}`, token)
   },
 
   async saveFavorite(token: string, contatoId: number): Promise<ApiResponse<boolean>> {
-    const response = await fetch(`${API_BASE_URL}/favorito/salvar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ contatoId }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to save favorite')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/favorito/salvar', token, { contatoId })
   },
 
   // Pessoa endpoints
   async buscarPessoa(token: string, id: number): Promise<ApiResponse<Pessoa>> {
-    const response = await fetch(`${API_BASE_URL}/pessoa/buscar/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to get person')
-    }
-
-    return await response.json()
+    return await this.request('GET', `/pessoa/buscar/${id}`, token)
   },
 
   async searchPeople(token: string, nome: string): Promise<ApiResponse<Pessoa[]>> {
-    const response = await fetch(`${API_BASE_URL}/pessoa/pesquisar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nome }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to search people')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/pessoa/pesquisar', token, { nome })
   },
 
   async deletePerson(token: string, id: number): Promise<ApiResponse<boolean>> {
-    const response = await fetch(`${API_BASE_URL}/pessoa/remover/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to delete person')
-    }
-
-    return await response.json()
+    return await this.request('DELETE', `/pessoa/remover/${id}`, token)
   },
 
   async savePerson(token: string, personData: PessoaFormData): Promise<ApiResponse<Pessoa>> {
-    const response = await fetch(`${API_BASE_URL}/pessoa/salvar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(personData),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to save person')
-    }
-
-    return await response.json()
+    return await this.request('POST', '/pessoa/salvar', token, personData)
   },
 
   // Foto endpoints
   async downloadPhoto(token: string, id: string): Promise<Blob> {
-    const response = await fetch(`${API_BASE_URL}/foto/download/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to download photo')
-    }
-
-    return await response.blob()
+    return await this.requestBlob(`/foto/download/${id}`, token)
   },
 
   async uploadPhoto(
